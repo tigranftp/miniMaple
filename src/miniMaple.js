@@ -1,172 +1,73 @@
 class MiniMaple{
     
-
-
-
     derivative(exp, variable) {
-        let state = "+"
-        let tmp = ""
-        let coef = 1
         let res = ""
-        let sign = "+"
-        let digits = "1234567890".split('');
-        let vars = " abcdefghijklmnopqrstuvwxyz"
-        let allowedSymbols = ' +-^1234567890abcdefghijklmnopqrstuvwxyz'.split('');
-        let expression = exp.toLowerCase() + "+"
-        let m = new Map()
-        for (let i = 0; i < expression.length; i++) {
-            let chr = expression[i]
-            if (!allowedSymbols.includes(chr)) {
-                throw "wrong symbol in input" + chr
+        let derivTerm = ""
+        const [listOfSigns, listOfTerms] = getListOfTermsAndSigns(exp)
+        for (let i = 0; i < listOfTerms.length; i++) {
+            derivTerm = getDerivativeFromTerm(listOfTerms[i], variable)
+            if (derivTerm == "") {
+                continue
             }
-            if (digits.includes(chr)){
-                if (state == "ignore") {
-                    continue
-                }
-                if (digits.includes(state)) {
-                    tmp += chr
-                    state = chr
-                    continue
-                }
-                if (state == "-" || state == "+"){
-                    tmp = chr
-                    state = chr
-                    continue
-                }
-                if (state = "^") {
-                    tmp += chr
-                    continue
-                }
-                if (vars.includes(state))
-                    throw "wrong symbol" + chr +" after " + state
-                    return ""
-            }
-            switch (chr){
-                case " ":
-                    break
-                case variable:
-                    if (state == "^") {
-                        throw "wrong symbol" + chr +" after " + state
-                        return ""
-                    }
-                    state = variable
-                    if (tmp=="") {
-                        coef = 1
-                    } else {
-                        coef = Number(tmp)
-                    }
-                    tmp = ""
-                    break
-                case "+":
-                    if (state == "ignore"){
-                        state = chr
-                        sign = chr
-                        break
-                    }
-                    if (state == "+" || state == "-"){
-                        state = chr
-                        sign = chr
-                        break
-                    }
-                    if (state == "^") {
-                        if (tmp.length <1) {
-                            throw "wring symbol after ^"
-                        }
-                        if (Number(tmp)-1 == 1) {
-                            res += sign + (coef*Number(tmp)).toString() + "*"+ variable
-                        } else {
-                            res += sign + (coef*Number(tmp)).toString()+ "*" + variable + "^" + (Number(tmp)-1)
-                        }
-                        state = "+"
-                        sign = "+"
-                        tmp = ""
-                        break
-                    }
-                    if (state == variable){
-                        res += sign + (coef).toString() 
-                        state = "+"
-                        sign = "+"
-                        tmp = ""
-                        break
-                    }
-                    if (digits.includes(state)) {
-                        tmp = ""
-                        sign = "+"
-                        state = "+"
-                        break
-                    }
-                    
-                    break
-                case "-":
-                    if (state == "ignore"){
-                        state = chr
-                        sign = chr
-                        break
-                    }
-                    if (state == "+"){
-                        state = "-"
-                        sign = "-"
-                        break
-                    }
-                    
-                    if (state == "-"){
-                        state = "+"
-                        sign = "+"
-                        break
-                    }
-                    if (state == "^") {
-                        if (tmp.length <1) {
-                            throw "wring symbol after ^"
-                        }
-                        if (Number(tmp)-1 == 1) {
-                            res += sign + (coef*Number(tmp)).toString() + "*"+ variable
-                        } else {
-                            res += sign + (coef*Number(tmp)).toString()+ "*" + variable + "^" + (Number(tmp)-1)
-                        }
-                        state = "+"
-                        tmp = ""
-                        sign = "-"
-                        break
-                    }
-                    if (state == variable){
-                        res += sign + (coef).toString() 
-                        state = "+"
-                        tmp = ""
-                        sign = "-"
-                        break
-                    }
-                    if (digits.includes(state)) {
-                        tmp = ""
-                        state = "+"
-                        sign = "-"
-                        break
-                    }
-                    
-                    break
-                case "^":
-                    if (digits.includes(state)) {
-                        throw "wrong symbol" + chr +" after " + state
-                        return ""
-                    }
-                    if (state == "ignore"){
-                        break
-                    }
-
-                    state = "^"
-                    tmp = ""
-                    break
-
-                default:
-                    coef = 1
-                    tmp = ""
-                    state = "ignore"
-                    sign = "+"
-                }
-          }
-          //alert(res)
-          return res.substring(1);
+            res += listOfSigns[i]+derivTerm
+        }
+        if (res == "") {
+            return "0"
+        }
+        res = res.substring(1);
+        return res
     }
 
+}
+
+function getDerivativeFromTerm(term, variable) {
+    let res = ""
+    const regex1 = new RegExp(`(\\d+)?\\*?(`+variable+`)(?:\\^(\\d+))?`);
+    const matches = term.match(regex1)
+    if (matches != null) {
+        let mult = 1
+        if (matches[1] != undefined ) {
+            mult = Number(matches[1])
+        }
+        let power = 1
+        if (matches[3] != undefined) {
+            power = Number(matches[3])
+        }
+        mult = mult * ( power - 1 > 0 ? power : 1)
+        let multStr = (mult>0 ? mult.toString() : "")
+        if (multStr != "" && power > 1) {
+            multStr += "*"
+        }
+        res = multStr + ( power > 1 ? variable : "") + ( power - 1 > 1 ? "^" + (power - 1).toString() : "")
+    }
+    return res
+}
+
+function getListOfTermsAndSigns(exp) {
+    let tmp = ""
+    exp = '+' + exp.replace(/\s/g, '');
+    let listOfTerms = []
+    let allowedSymbols = '+-^1234567890abcdefghijklmnopqrstuvwxyz'.split('');
+    let listOfSigns = []
+    let firstSign = true
+    for (let i = 0; i < exp.length; i++) {        
+        if (!allowedSymbols.includes(exp[i])) {
+            throw "wrong symbol in input " + exp[i]
+        }
+        if (exp[i]=="+" || exp[i] =="-") {
+            listOfSigns.push(exp[i])
+            if (firstSign){
+                firstSign = false
+                continue
+            }
+            listOfTerms.push(tmp)
+            tmp = ""
+            continue
+        }
+        tmp += exp[i]
+    }
+    listOfTerms.push(tmp)
+    return [listOfSigns, listOfTerms]
 }
 
 export {MiniMaple}
